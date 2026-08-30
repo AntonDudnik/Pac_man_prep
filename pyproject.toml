@@ -1,0 +1,26 @@
+[project]
+name = "pac-man-prep"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Anton Dudnik", email = "anton.dudnik@gmail.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "flake8>=7.3.0",
+    "mypy>=2.3.1",
+    "pydantic>=2.13.5",
+    "pygame>=2.6.1",
+]
+
+[project.scripts]
+pac-man-prep = "pac_man_prep:main"
+
+[build-system]
+requires = ["uv_build>=0.12.6,<0.13.0"]
+build-backend = "uv_build"
+
+[tool.flake8]
+max-line-length = 100
+ignore = ["E402"]
