@@ -18,9 +18,19 @@ dependencies = [
 pac-man-prep = "pac_man_prep:main"
 
 [build-system]
-requires = ["uv_build>=0.12.6,<0.13.0"]
-build-backend = "uv_build"
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["pacman*"]
 
 [tool.flake8]
 max-line-length = 100
 ignore = ["E402"]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+]
+

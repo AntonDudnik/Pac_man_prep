@@ -5,7 +5,7 @@ CONFIG       := config.json
 SRC_DIR      := pacman
 ALL_PY       := $(MAIN) $(SRC_DIR)
 
-.PHONY: all install run debug clean lint lint-strict
+.PHONY: all install run debug clean lint lint-strict test
 
 all: run
 
@@ -38,3 +38,6 @@ lint:
 lint-strict:
 	$(UV) run flake8 $(ALL_PY)
 	$(UV) run mypy --strict $(ALL_PY)
+
+test:
+	$(UV) run pytest tests/	

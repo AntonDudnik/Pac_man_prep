@@ -1,0 +1,30 @@
+{
+  # Global Game Settings
+  "highscore_filename": "highscores.json",
+  "lives": 3,
+  "points_per_pacgum": 10,
+  "points_per_super_pacgum": 50,
+  "points_per_ghost": 200,
+  "seed": 42,
+
+  /* Maze and Level Configuration */
+  "width": 50,
+  "height": 35,
+  "cell_size": 32,
+  "player_speed": 15.0,
+  "ghost_speed": 16.0,
+  "pacgum": 42,
+  "level_max_time": 90.0,
+
+  # Custom Level Overrides (Optional)
+  "levels": [
+    {
+      "width": 19,
+      "height": 21,
+      "pacgum": 42,
+      "level_max_time": 90.0,
+      "player_start": [9, 10],
+      "ghost_starts": [[1, 1], [17, 1], [1, 19], [17, 19]]
+    }
+  ]
+}

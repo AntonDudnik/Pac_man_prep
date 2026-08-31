@@ -13,12 +13,12 @@ This roadmap breaks down the development of the 42 **Pac_Man** project into incr
 ---
 
 ## Phase 1: Project Setup & Core Models (Pydantic Integration)
-- [ ] **Dependencies**: Add `pydantic` and `pygame` to `pyproject.toml` (`uv add pydantic pygame`).
-- [ ] **Configuration Module (`pacman/config.py`)**:
+- [X] **Dependencies**: Add `pydantic` and `pygame` to `pyproject.toml` (`uv add pydantic pygame`).
+- [X] **Configuration Module (`pacman/config.py`)**:
   - Implement Pydantic schema models (`GameConfig`, `LevelConfig`).
   - Write custom JSON parser stripping `#` and `//` comments.
   - Test fallback to safe defaults on invalid/missing JSON fields without tracebacks.
-- [ ] **Data Models (`pacman/entities/`)**:
+- [X] **Data Models (`pacman/entities/`)**:
   - Define `Vector2D` / `Direction` models for grid coordinates.
   - Define entity states (Player position/lives, Ghost modes: *Chase*, *Frightened*, *Eaten*).
 
