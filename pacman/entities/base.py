@@ -25,9 +25,6 @@ class Vector2D(BaseModel):
     x: float = Field(default=0.0)
     y: float = Field(default=0.0)
 
-    def to_tuple(self) -> Tuple[int, int]:
-        return (self.x, self.y)
-
     def to_grid(self) -> Tuple[int, int]:
         """Return integer grid cell indices."""
         return (int(self.x), int(self.y))

@@ -19,9 +19,10 @@ class LevelConfig(BaseModel):
 
 class GameConfig(BaseModel):
     highscore_filename: str = "highscores.json"
+    spritesheet_path: str = "assets/spritesheet.png"
     width: int = Field(default=19, ge=5)
     height: int = Field(default=21, ge=5)
-    cell_size: int = Field(default=24, ge=8, le=64)
+    cell_size: int = Field(default=24, ge=8, le=120)
     lives: int = Field(default=3, ge=1)
     pacgum: int = Field(default=42, ge=0)
     points_per_pacgum: int = 10

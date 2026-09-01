@@ -1,5 +1,6 @@
 {
   # Global Game Settings
+  "spritesheet_path": "assets/spritesheet.png",
   "highscore_filename": "highscores.json",
   "lives": 3,
   "points_per_pacgum": 10,
@@ -8,13 +9,13 @@
   "seed": 42,
 
   /* Maze and Level Configuration */
-  "width": 50,
-  "height": 35,
-  "cell_size": 32,
-  "player_speed": 15.0,
-  "ghost_speed": 16.0,
+  "width": 30,
+  "height": 25,
+  "cell_size": 24,
+  "player_speed": 5.0,
+  "ghost_speed": 4.0,
   "pacgum": 42,
-  "level_max_time": 90.0,
+  "level_max_time": 10.0,
 
   # Custom Level Overrides (Optional)
   "levels": [

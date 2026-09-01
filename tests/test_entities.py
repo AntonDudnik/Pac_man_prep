@@ -4,10 +4,10 @@ from pacman.entities import Direction, GhostMode, GhostState, PlayerState, Vecto
 def test_vector_movement() -> None:
     start = Vector2D(x=9, y=10)
     moved_up = start.move(Direction.UP)
-    assert moved_up.to_tuple() == (9, 9)
+    assert moved_up.to_grid() == (9, 9)
 
     moved_right = start.move(Direction.RIGHT)
-    assert moved_right.to_tuple() == (10, 10)
+    assert moved_right.to_grid() == (10, 10)
 
 
 def test_player_state_defaults() -> None:

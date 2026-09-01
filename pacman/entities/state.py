@@ -26,3 +26,4 @@ class GhostState(BaseModel):
     mode: GhostMode = GhostMode.CHASE
     frightened_timer: float = Field(default=0.0, ge=0.0)
     speed: float = Field(default=4.0, gt=0.0)  # Slightly slower than player
+    dir_change_timer: float = Field(default=0.0, ge=0.0)
