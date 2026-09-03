@@ -1,4 +1,6 @@
 from pacman.entities.base import Direction, Vector2D
-from pacman.entities.state import GhostMode, GhostState, PlayerState
+from pacman.entities.state import GhostMode, GhostState, PlayerState, GameState
 
-__all__ = ["Direction", "Vector2D", "GhostMode", "PlayerState", "GhostState"]
+__all__ = [
+    "Direction", "Vector2D", "GhostMode", "PlayerState", "GhostState", "GameState"
+]

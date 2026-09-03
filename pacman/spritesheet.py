@@ -28,8 +28,9 @@ PALETTE_BLOCK_HEIGHT: int = 9 * FONT_STRIDE + 6 * ENTITY_STRIDE + 3
 class SpriteSheet:
     def __init__(
         self,
-        filename: str,
+        filename: str = "assets/spritesheet.png",
         target_size: int = 24,
+        tile_pixel_size: int = 8,
         default_palette: Tuple[int, int] = (2, 1),
     ) -> None:
         if not os.path.exists(filename):
@@ -38,16 +39,41 @@ class SpriteSheet:
         self.sheet = pygame.image.load(filename).convert_alpha()
         self.target_size = target_size
         self.current_palette = default_palette
-        # Cache surfaces: key is (col, row, palette_x, palette_y, target_size)
-        self._tile_cache: Dict[Tuple[int, int, int, int, int], pygame.Surface] = {}
+        self._tile_cache: Dict[Tuple[int, int, int, int, int, str], pygame.Surface] = {}
+
+        # Pre-cache dictionary for wall and pellet surfaces
+        self.wall_sprites: Dict[str, pygame.Surface] = {}
 
     def set_palette(self, palette_coord: Tuple[int, int]) -> None:
         """Update active palette coordinate (col, row)."""
         self.current_palette = palette_coord
 
+    def get_font_tile(self, col: int, row: int) -> pygame.Surface:
+        """Extract an 8x8 font/maze tile using current_palette offset (top section)."""
+        cache_key = (col, row, self.current_palette[0],
+                     self.current_palette[1], self.target_size, "font")
+        if cache_key in self._tile_cache:
+            return self._tile_cache[cache_key]
+
+        block_x = self.current_palette[0] * PALETTE_BLOCK_WIDTH
+        block_y = self.current_palette[1] * PALETTE_BLOCK_HEIGHT
+
+        # Font/Maze grid uses 1px margin + FONT_STRIDE (9px) spacing
+        x = block_x + (col * FONT_STRIDE) + 1
+        y = block_y + (row * FONT_STRIDE) + 1
+
+        rect = pygame.Rect(x, y, FONT_TILE_SIZE, FONT_TILE_SIZE)
+        image = pygame.Surface((FONT_TILE_SIZE, FONT_TILE_SIZE), pygame.SRCALPHA)
+        image.blit(self.sheet, (0, 0), rect)
+
+        scaled_image = pygame.transform.scale(image, (self.target_size, self.target_size))
+        self._tile_cache[cache_key] = scaled_image
+        return scaled_image
+
     def get_entity_tile(self, col: int, row: int) -> pygame.Surface:
         """Extract a 16x16 tile using current_palette state (with caching)."""
-        cache_key = (col, row, self.current_palette[0], self.current_palette[1], self.target_size)
+        cache_key = (col, row, self.current_palette[0],
+                     self.current_palette[1], self.target_size, "entity")
         if cache_key in self._tile_cache:
             return self._tile_cache[cache_key]
 

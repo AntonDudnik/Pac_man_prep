@@ -6,12 +6,12 @@
 - [x] Data models (`Vector2D`, `Direction`, entity states).
 - [x] Unit testing pipeline (`pytest`, `make test`).
 
-## Phase 2: Graphics, Event Adapter & Visual Debugging (Pygame) [IN PROGRESS]
+## Phase 2: Graphics, Event Adapter & Visual Debugging (Pygame) [DONE]
 - [x] Pygame window initialization & FPS clock adapter.
-- [x] Menu state machine navigation (Space to play, P to pause, Q to quit).
+- [x] Menu state machine navigation (Space/Enter to play, P to pause, Q/Esc quit dialog).
 - [x] Dynamic cell scaling (`cell_size`) & configuration parameters (`player_speed`, `ghost_speed`).
 - [x] Debug grid overlay rendering (`alpha` transparent grid).
-- [ ] Load & render classic Pac-Man / Ghost directional sprites & animations.
+- [x] Load & render classic Pac-Man / Ghost directional sprites & animations.
 
 ## Phase 3: External Maze Adapter & Dynamic Generation
 - [ ] Integrate A-Maze-ing algorithm interface.

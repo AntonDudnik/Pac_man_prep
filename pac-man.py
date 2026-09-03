@@ -8,6 +8,11 @@ def main() -> None:
         print("Usage: python3 pac-man.py <config.json>", file=sys.stderr)
         sys.exit(1)
 
+    config = load_config(sys.argv[1])
+    engine = GameEngine(config)
+    engine.run()
+
+    '''
     try:
         config = load_config(sys.argv[1])
         engine = GameEngine(config)
@@ -15,6 +20,7 @@ def main() -> None:
     except Exception as e:
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)
+    '''
 
 
 if __name__ == "__main__":

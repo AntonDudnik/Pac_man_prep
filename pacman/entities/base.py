@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Tuple
+from typing import Tuple, List
 from pydantic import BaseModel, ConfigDict, Field
 
 
@@ -17,6 +17,38 @@ class Direction(Enum):
     @property
     def dy(self) -> int:
         return self.value[1]
+
+
+# Bitmask directional constants
+NORTH_BIT: int = 1
+EAST_BIT: int = 2
+SOUTH_BIT: int = 4
+WEST_BIT: int = 8
+
+
+def can_move(board: List[List[int]], grid_x: int, grid_y: int, direction: Direction) -> bool:
+    """
+    Checks if movement in `direction` from cell (grid_x, grid_y) is blocked by a wall bit.
+    """
+    height = len(board)
+    width = len(board[0])
+
+    # Out of bounds safety check
+    if not (0 <= grid_x < width and 0 <= grid_y < height):
+        return False
+
+    cell = board[grid_y][grid_x]
+
+    if direction == Direction.UP:
+        return not bool(cell & NORTH_BIT)
+    elif direction == Direction.RIGHT:
+        return not bool(cell & EAST_BIT)
+    elif direction == Direction.DOWN:
+        return not bool(cell & SOUTH_BIT)
+    elif direction == Direction.LEFT:
+        return not bool(cell & WEST_BIT)
+
+    return True
 
 
 class Vector2D(BaseModel):

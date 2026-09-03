@@ -1,7 +1,7 @@
 import json
 import re
 import sys
-from typing import List
+from typing import List, Tuple
 from pydantic import BaseModel, Field, ValidationError
 
 
@@ -33,6 +33,11 @@ class GameConfig(BaseModel):
     seed: int = 42
     level_max_time: float = Field(default=90.0, gt=0)
     levels: List[LevelConfig] = Field(default_factory=list)
+
+    @property
+    def maze_size(self) -> Tuple[int, int]:
+        """Convert game width/height into raw tuple dimensions for MazeGenerator."""
+        return (self.width, self.height)
 
 
 def strip_json_comments(content: str) -> str:

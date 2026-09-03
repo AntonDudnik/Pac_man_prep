@@ -9,13 +9,13 @@
   "seed": 42,
 
   /* Maze and Level Configuration */
-  "width": 30,
-  "height": 25,
-  "cell_size": 24,
-  "player_speed": 5.0,
-  "ghost_speed": 4.0,
+  "width": 20,
+  "height": 19,
+  "cell_size": 42,
+  "player_speed": 25.0,
+  "ghost_speed": 25.0,
   "pacgum": 42,
-  "level_max_time": 10.0,
+  "level_max_time": 99.0,
 
   # Custom Level Overrides (Optional)
   "levels": [

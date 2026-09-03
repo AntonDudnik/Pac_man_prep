@@ -1,28 +1,32 @@
-from enum import Enum, auto
+from pacman.entities.state import (
+    Direction,
+    GameState,
+    GhostMode,
+    GhostState,
+    PlayerState,
+    Vector2D
+)
+from pacman.config import GameConfig
+from pacman.adapters.maze import MazeAdapter
 import os
 import random
 
 os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "1"
 import pygame  # noqa: E402
-
-from pacman.config import GameConfig  # noqa: E402
-from pacman.entities import Direction, GhostMode, GhostState, PlayerState, Vector2D  # noqa: E402
 from pacman.ui import PygameUI  # noqa: E402
-
-
-class GameState(Enum):
-    MENU = auto()
-    PLAYING = auto()
-    PAUSED = auto()
-    CONFIRM_QUIT = auto()
-    GAME_OVER = auto()
 
 
 class GameEngine:
     def __init__(self, config: GameConfig) -> None:
         self.config = config
         self.state = GameState.MENU
-        self.ui = PygameUI(config.width, config.height, config.cell_size, config.spritesheet_path)
+        # 1. Generate Maze using config dimensions and seed
+        self.maze_adapter = self.generate_maze()
+        self.board = self.maze_adapter.grid
+
+        self.ui = PygameUI(
+            self.config.width, self.config.height,
+            config.cell_size, config.spritesheet_path)
 
         self.current_level = 1
         self.score = 0
@@ -31,25 +35,43 @@ class GameEngine:
         self.state = GameState.MENU
         self.menu_options = ["PLAY GAME", "OPTIONS", "QUIT"]
         self.menu_index = 0
-
-        # Entities
-        self.player = PlayerState(
-            position=Vector2D(x=config.width // 2, y=config.height // 2),
-            lives=config.lives,
-            speed=config.player_speed,
-        )
-        self.ghosts = [
-            GhostState(id=0, position=Vector2D(x=1, y=1), speed=config.ghost_speed),
-            GhostState(id=1, position=Vector2D(x=config.width - 2, y=1), speed=config.ghost_speed),
-            GhostState(id=2, position=Vector2D(x=1, y=config.height - 2), speed=config.ghost_speed),
-            GhostState(id=3, position=Vector2D(x=config.width - 2, y=config.height - 2),
-                       speed=config.ghost_speed),
-        ]
-
         # Cheats
         self.cheat_invincible = False
         self.cheat_freeze_ghosts = False
         self.cheat_speed_boost: bool = False
+
+        # 2. Initialize Player and Ghosts matching your model fields
+        self.player = PlayerState()
+        self.ghosts = [
+            GhostState(id=0, home_corner=Vector2D(x=1, y=1)),
+            GhostState(id=1, home_corner=Vector2D(x=self.config.width - 2, y=1)),
+            GhostState(id=2, home_corner=Vector2D(x=1, y=self.config.height - 2)),
+            GhostState(
+                id=3,
+                home_corner=Vector2D(
+                    x=self.config.width - 2, y=self.config.height - 2
+                ),
+            ),
+        ]
+
+        # 3. Position Player on spawn point derived from maze generator
+        if hasattr(self.maze_adapter, "player_spawn"):
+            px, py = self.maze_adapter.player_spawn
+            self.player.position = Vector2D(x=float(px), y=float(py))
+
+    def generate_maze(self) -> MazeAdapter:
+        """Instantiate MazeAdapter with current config parameters."""
+        adapter = MazeAdapter(size=self.config.maze_size, seed=self.config.seed,)
+        print(f"[ENGINE] Maze Generated: {adapter.width}x{adapter.height} tile grid.")
+        print(f"[ENGINE] Solution Path: {adapter.get_shortest_path()}")
+        return adapter
+
+    def reset_level(self, new_seed: int | None = None) -> None:
+        """Regenerate the maze for level transitions or seed updates."""
+        if new_seed is not None:
+            self.config.seed = new_seed
+        self.maze_adapter = self.generate_maze()
+        self.board = self.maze_adapter.grid
 
     def handle_input(self, event: pygame.event.Event) -> None:
         if event.type != pygame.KEYDOWN:
@@ -173,8 +195,8 @@ class GameEngine:
         distance = effective_speed * dt
         new_pos = self.player.position.move_continuous(self.player.direction, distance)
 
-        px = max(1.0, min(float(self.config.width - 2), new_pos.x))
-        py = max(1.0, min(float(self.config.height - 2), new_pos.y))
+        px = max(0.0, min(float(self.config.width - 1), new_pos.x))
+        py = max(0.0, min(float(self.config.height - 1), new_pos.y))
         self.player.position = Vector2D(x=px, y=py)
 
         # Update ghost mode timers & state transitions
@@ -203,8 +225,8 @@ class GameEngine:
 
         # Boundary limits (clamp to board dimensions from self.config)
         is_blocked = (
-            next_pos.x <= 1.0 or next_pos.x >= (self.config.width - 2) or
-            next_pos.y <= 1.0 or next_pos.y >= (self.config.height - 2)
+            next_pos.x <= 0.0 or next_pos.x >= (self.config.width - 1) or
+            next_pos.y <= 0.0 or next_pos.y >= (self.config.height - 1)
         )
 
         # Switch direction if 5 seconds have elapsed OR ghost hits board boundaries
@@ -214,8 +236,8 @@ class GameEngine:
             next_pos = ghost.position.move_continuous(ghost.direction, dist)
 
         # Clamp position safely within board boundaries
-        gx = max(1.0, min(float(self.config.width - 2), next_pos.x))
-        gy = max(1.0, min(float(self.config.height - 2), next_pos.y))
+        gx = max(0.0, min(float(self.config.width - 1), next_pos.x))
+        gy = max(0.0, min(float(self.config.height - 1), next_pos.y))
         ghost.position = Vector2D(x=gx, y=gy)
 
     def _get_random_valid_direction(self, ghost: GhostState) -> Direction:
@@ -241,6 +263,7 @@ class GameEngine:
             self.ui.clear()
             self.ui.draw_hud(self.score, self.player.lives, self.time_remaining, self.current_level)
             self.ui.draw_maze_border()
+            self.ui.draw_board(self.board)
             self.ui.draw_grid_overlay(alpha=20)
             self.ui.draw_player(self.player)
             self.ui.draw_ghosts(self.ghosts)

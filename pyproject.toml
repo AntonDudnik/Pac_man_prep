@@ -9,6 +9,7 @@ authors = [
 requires-python = ">=3.12"
 dependencies = [
     "flake8>=7.3.0",
+    "mazegenerator",
     "mypy>=2.3.1",
     "pydantic>=2.13.5",
     "pygame>=2.6.1",
@@ -28,6 +29,9 @@ include = ["pacman*"]
 [tool.flake8]
 max-line-length = 100
 ignore = ["E402"]
+
+[tool.uv.sources]
+mazegenerator = { path = "assets/mazegenerator-2.1.0-py3-none-any.whl" }
 
 [dependency-groups]
 dev = [
