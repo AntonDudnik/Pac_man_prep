@@ -2,8 +2,10 @@ import os
 import sys
 from typing import List
 
-from pacman.entities import GhostState, PlayerState
 from pacman.spritesheet import AnimationManager, SpriteSheet
+from pacman.entities.player import Player
+from pacman.entities.ghost import Ghost
+
 
 os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "1"
 import pygame  # noqa: E402
@@ -31,12 +33,16 @@ NORTH: int = 1
 EAST: int = 2
 SOUTH: int = 4
 WEST: int = 8
-
 DOT: int = 16
 SUPER_DOT: int = 32
 
 BLUE = (33, 33, 255)
 PELLET_COLOR = (255, 183, 174)
+
+# Debug Colors (Semi-transparent / distinct)
+GHOST_HOUSE_COLOR = (70, 0, 120)  # Purple
+GATE_COLOR = (255, 184, 255)       # Pink Gate Line
+OBSTACLE_42_COLOR = (40, 40, 40)   # Dark Gray for solid '42' blocks (value 15)
 
 
 class PygameUI:
@@ -92,7 +98,7 @@ class PygameUI:
         surface = self.font.render(hud_text, True, WHITE)
         self.screen.blit(surface, (10, 10))
 
-    def draw_board(self, board: list[list[int]]) -> None:
+    def draw_board(self, board: list[list[int]], debug: bool = True) -> None:
         cs = self.cell_size
 
         for y, row in enumerate(board):
@@ -102,6 +108,20 @@ class PygameUI:
                 right = left + cs
                 bottom = top + cs
                 cx, cy = left + cs // 2, top + cs // 2
+
+                # --- DEBUG VISUAL OVERLAYS ---
+                if debug:
+                    # Highlight Ghost Box interior tiles
+                    if cell & 64:  # GHOST_HOUSE
+                        pygame.draw.rect(self.screen, GHOST_HOUSE_COLOR, (left, top, cs, cs))
+
+                    # Highlight Ghost Gate door tile
+                    if cell & 128:  # GATE
+                        pygame.draw.rect(self.screen, GATE_COLOR, (left, top, cs, cs))
+
+                    # Highlight solid '42' maze generator obstacles (raw code 15)
+                    if (cell & 15) == 15:
+                        pygame.draw.rect(self.screen, OBSTACLE_42_COLOR, (left, top, cs, cs))
 
                 # 1. Render Pellets
                 if cell & 16:  # DOT
@@ -113,7 +133,6 @@ class PygameUI:
                             pygame.draw.circle(self.screen, PELLET_COLOR, (cx, cy), 3)
                     else:
                         pygame.draw.circle(self.screen, PELLET_COLOR, (cx, cy), 3)
-
                 elif cell & 32:  # SUPER_DOT
                     if self.animations and hasattr(self.animations.sheet, "wall_sprites"):
                         sprite = self.animations.sheet.wall_sprites.get("super_dot")
@@ -136,45 +155,27 @@ class PygameUI:
                 if cell & 8:  # WEST
                     pygame.draw.line(self.screen, BLUE, (left, top), (left, bottom), WALL_THICKNESS)
 
-    def draw_maze_border(self) -> None:
-        top_offset = 40
-        rect = pygame.Rect(
-            0, top_offset, self.screen_width, self.screen_height - top_offset
-        )
-        pygame.draw.rect(self.screen, BLUE, rect, width=3)
-
-    def draw_player(self, player: PlayerState) -> None:
-        top_offset = 40
+    def draw_player(self, player: Player) -> None:
         px = int(player.position.x * self.cell_size + WALL_THICKNESS // 2 + 2)
-        py = int(player.position.y * self.cell_size + WALL_THICKNESS // 2 + 2) + top_offset
+        py = int(player.position.y * self.cell_size + WALL_THICKNESS // 2 + 2) + HUD_HEIGHT
 
         if self.animations:
-            sprite = self.animations.get_pacman_sprite(
-                player.direction, self.anim_time
-            )
+            sprite = self.animations.get_pacman_sprite(player.direction, self.anim_time)
             self.screen.blit(sprite, (px, py))
         else:
             cx = px + self.cell_size // 2
             cy = py + self.cell_size // 2
-            pygame.draw.circle(
-                self.screen, YELLOW, (cx, cy), self.cell_size // 2 - 2
-            )
+            pygame.draw.circle(self.screen, YELLOW, (cx, cy), self.cell_size // 2 - 2)
 
-    def draw_ghosts(self, ghosts: List[GhostState]) -> None:
-        top_offset = 40
-
+    def draw_ghosts(self, ghosts: List[Ghost]) -> None:
         for ghost in ghosts:
             gx = int(ghost.position.x * self.cell_size + WALL_THICKNESS // 2 + 2)
-            gy = int(ghost.position.y * self.cell_size + WALL_THICKNESS // 2 + 2) + top_offset
+            gy = int(ghost.position.y * self.cell_size + WALL_THICKNESS // 2 + 2) + HUD_HEIGHT
 
-            anim_mgr = getattr(self, "animations", None) or getattr(
-                self, "anim_manager", None
-            )
+            anim_mgr = getattr(self, "animations", None) or getattr(self, "anim_manager", None)
 
             if anim_mgr:
-                anim_time = getattr(
-                    self, "anim_time", getattr(self, "anim_timer", 0.0)
-                )
+                anim_time = getattr(self, "anim_time", getattr(self, "anim_timer", 0.0))
                 sprite = anim_mgr.get_ghost_sprite(
                     ghost_id=ghost.id,
                     mode=ghost.mode,
@@ -187,33 +188,23 @@ class PygameUI:
                 cx = gx + self.cell_size // 2
                 cy = gy + self.cell_size // 2
                 color = self.ghost_colors[ghost.id % len(self.ghost_colors)]
-                pygame.draw.circle(
-                    self.screen, color, (cx, cy), self.cell_size // 2 - 2
-                )
+                pygame.draw.circle(self.screen, color, (cx, cy), self.cell_size // 2 - 2)
 
     def draw_grid_overlay(self, alpha: int = 50) -> None:
-        grid_surface = pygame.Surface(
-            (self.screen_width, self.screen_height), pygame.SRCALPHA
-        )
+        grid_surface = pygame.Surface((self.screen_width, self.screen_height), pygame.SRCALPHA)
         grid_color = (255, 255, 255, alpha)
         top_offset = 40
 
         for x in range(0, self.screen_width + 1, self.cell_size):
-            pygame.draw.line(
-                grid_surface, grid_color, (x, top_offset), (x, self.screen_height)
-            )
+            pygame.draw.line(grid_surface, grid_color, (x, top_offset), (x, self.screen_height))
 
         for y in range(top_offset, self.screen_height + 1, self.cell_size):
-            pygame.draw.line(
-                grid_surface, grid_color, (0, y), (self.screen_width, y)
-            )
+            pygame.draw.line(grid_surface, grid_color, (0, y), (self.screen_width, y))
 
         self.screen.blit(grid_surface, (0, 0))
 
     def draw_confirm_quit(self) -> None:
-        overlay = pygame.Surface(
-            (self.screen_width, self.screen_height), pygame.SRCALPHA
-        )
+        overlay = pygame.Surface((self.screen_width, self.screen_height), pygame.SRCALPHA)
         overlay.fill((0, 0, 0, 180))
         self.screen.blit(overlay, (0, 0))
 
@@ -221,15 +212,9 @@ class PygameUI:
         box_x = (self.screen_width - box_w) // 2
         box_y = (self.screen_height - box_h) // 2
 
+        pygame.draw.rect(self.screen, (20, 20, 40), (box_x, box_y, box_w, box_h), border_radius=8)
         pygame.draw.rect(
-            self.screen, (20, 20, 40), (box_x, box_y, box_w, box_h), border_radius=8
-        )
-        pygame.draw.rect(
-            self.screen,
-            (255, 255, 255),
-            (box_x, box_y, box_w, box_h),
-            width=2,
-            border_radius=8,
+            self.screen, (255, 255, 255), (box_x, box_y, box_w, box_h), width=2, border_radius=8,
         )
 
         msg_surf = self.font.render("QUIT GAME?", True, (255, 255, 0))

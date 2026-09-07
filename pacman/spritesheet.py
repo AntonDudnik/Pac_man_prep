@@ -37,6 +37,7 @@ class SpriteSheet:
             raise FileNotFoundError(f"Spritesheet file not found: {filename}")
 
         self.sheet = pygame.image.load(filename).convert_alpha()
+        self.sheet.set_colorkey((0, 0, 0))
         self.target_size = target_size
         self.current_palette = default_palette
         self._tile_cache: Dict[Tuple[int, int, int, int, int, str], pygame.Surface] = {}

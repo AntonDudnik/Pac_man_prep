@@ -1,18 +1,16 @@
 from typing import List, Tuple
-from enum import IntFlag
 from mazegenerator import MazeGenerator
 
 
-class MazeBit(IntFlag):
-    """Bitmask representation for wall boundaries and cell contents."""
-    NORTH = 1
-    EAST = 2
-    SOUTH = 4
-    WEST = 8
-    DOT = 16
-    SUPER_DOT = 32
-    GHOST_HOUSE = 64
-    GATE = 128
+# Wall Bitwise Flags
+NORTH: int = 1
+EAST: int = 2
+SOUTH: int = 4
+WEST: int = 8
+DOT = 16
+SUPER_DOT = 32
+GHOST_HOUSE: int = 64
+GATE: int = 128
 
 
 class MazeAdapter:
@@ -49,10 +47,10 @@ class MazeAdapter:
         # Mark Ghost Box region
         for y in range(cy - 1, cy + 2):
             for x in range(cx - 2, cx + 3):
-                self.grid[y][x] |= MazeBit.GHOST_HOUSE
+                self.grid[y][x] |= GHOST_HOUSE
 
         # Door Gate at top of Ghost Box
-        self.grid[cy - 2][cx] |= MazeBit.GATE
+        self.grid[cy - 2][cx] |= GATE
 
         # Player spawn coordinate
         self.player_spawn = (cx, cy + 3)
@@ -70,12 +68,12 @@ class MazeAdapter:
             for x in range(self.width):
                 cell = self.grid[y][x]
                 # Populate dots on tiles that are not ghost house or solid obstacle blocks (15)
-                if not (cell & MazeBit.GHOST_HOUSE) and cell != 15:
-                    self.grid[y][x] |= MazeBit.DOT
+                if not (cell & GHOST_HOUSE) and cell != 15:
+                    self.grid[y][x] |= DOT
 
         # Upgrade corner pellets to Super-Dots
         for cx, cy in corner_candidates:
             if 0 <= cx < self.width and 0 <= cy < self.height:
-                if self.grid[cy][cx] & MazeBit.DOT:
-                    self.grid[cy][cx] &= ~MazeBit.DOT  # Clear standard dot bit
-                    self.grid[cy][cx] |= MazeBit.SUPER_DOT
+                if self.grid[cy][cx] & DOT:
+                    self.grid[cy][cx] &= ~DOT  # Clear standard dot bit
+                    self.grid[cy][cx] |= SUPER_DOT

@@ -1,16 +1,11 @@
-from pacman.entities.state import (
-    Direction,
-    GameState,
-    GhostMode,
-    GhostState,
-    PlayerState,
-    Vector2D
-)
+from pacman.entities.ghost import Ghost
+from pacman.entities.player import Player
+from pacman.entities.state import GameState, GhostMode
+from pacman.entities.base import Vector2D, Direction
 from pacman.config import GameConfig
 from pacman.adapters.maze import MazeAdapter
-import os
-import random
 
+import os
 os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "1"
 import pygame  # noqa: E402
 from pacman.ui import PygameUI  # noqa: E402
@@ -41,17 +36,16 @@ class GameEngine:
         self.cheat_speed_boost: bool = False
 
         # 2. Initialize Player and Ghosts matching your model fields
-        self.player = PlayerState()
+        # self.player = PlayerState()
+        self.player = Player(speed=self.config.player_speed, lives=self.config.lives)
         self.ghosts = [
-            GhostState(id=0, home_corner=Vector2D(x=1, y=1)),
-            GhostState(id=1, home_corner=Vector2D(x=self.config.width - 2, y=1)),
-            GhostState(id=2, home_corner=Vector2D(x=1, y=self.config.height - 2)),
-            GhostState(
-                id=3,
-                home_corner=Vector2D(
-                    x=self.config.width - 2, y=self.config.height - 2
-                ),
-            ),
+            Ghost(ghost_id=0, home_corner=Vector2D(x=1, y=1), speed=self.config.ghost_speed),
+            Ghost(ghost_id=1, home_corner=Vector2D(x=self.config.width - 2, y=1),
+                  speed=self.config.ghost_speed),
+            Ghost(ghost_id=2, home_corner=Vector2D(
+                x=1, y=self.config.height - 2), speed=self.config.ghost_speed),
+            Ghost(ghost_id=3, home_corner=Vector2D(x=self.config.width - 2,
+                  y=self.config.height - 2), speed=self.config.ghost_speed),
         ]
 
         # 3. Position Player on spawn point derived from maze generator
@@ -146,13 +140,13 @@ class GameEngine:
 
                 elif self.state == GameState.PLAYING:
                     if event.key in (pygame.K_UP, pygame.K_w):
-                        self.player.direction = Direction.UP
+                        self.player.next_direction = Direction.UP
                     elif event.key in (pygame.K_DOWN, pygame.K_s):
-                        self.player.direction = Direction.DOWN
+                        self.player.next_direction = Direction.DOWN
                     elif event.key in (pygame.K_LEFT, pygame.K_a):
-                        self.player.direction = Direction.LEFT
+                        self.player.next_direction = Direction.LEFT
                     elif event.key in (pygame.K_RIGHT, pygame.K_d):
-                        self.player.direction = Direction.RIGHT
+                        self.player.next_direction = Direction.RIGHT
 
                     # Visual Debugging Hotkeys
                     elif event.key == pygame.K_f:
@@ -181,79 +175,24 @@ class GameEngine:
         return True
 
     def update(self, dt: float) -> None:
-        if self.state != GameState.PLAYING:
-            return
-
         self.ui.update_anim_timer(dt)
 
         self.time_remaining -= dt
         if self.time_remaining <= 0:
             self.state = GameState.GAME_OVER
 
-        # Player Movement
-        effective_speed = self.player.speed * (2.0 if self.cheat_speed_boost else 1.0)
-        distance = effective_speed * dt
-        new_pos = self.player.position.move_continuous(self.player.direction, distance)
+        if self.state != GameState.PLAYING:
+            return
 
-        px = max(0.0, min(float(self.config.width - 1), new_pos.x))
-        py = max(0.0, min(float(self.config.height - 1), new_pos.y))
-        self.player.position = Vector2D(x=px, y=py)
+        # 1. Update Player
+        self.player.update(self.board, dt)
 
-        # Update ghost mode timers & state transitions
+        # 2. Update Ghosts
         for ghost in self.ghosts:
-            if ghost.mode == GhostMode.FRIGHTENED:
-                ghost.frightened_timer -= dt
-                if ghost.frightened_timer <= 0.0:
-                    ghost.frightened_timer = 0.0
-                    ghost.mode = GhostMode.CHASE
+            ghost.update(self.board, dt, frozen=self.cheat_freeze_ghosts)
 
-        # Move ghosts if not frozen by cheat
-        if not self.cheat_freeze_ghosts:
-            for ghost in self.ghosts:
-                self._update_ghost(ghost, dt)
-
-    def _update_ghost(self, ghost: GhostState, dt: float) -> None:
-        """Update a single ghost's continuous position, boundary checks, and direction timers."""
-        ghost.dir_change_timer += dt
-
-        # Frightened ghosts move at half speed
-        speed = ghost.speed * (0.5 if ghost.mode == GhostMode.FRIGHTENED else 1.0)
-        dist = speed * dt
-
-        # Calculate proposed continuous position
-        next_pos = ghost.position.move_continuous(ghost.direction, dist)
-
-        # Boundary limits (clamp to board dimensions from self.config)
-        is_blocked = (
-            next_pos.x <= 0.0 or next_pos.x >= (self.config.width - 1) or
-            next_pos.y <= 0.0 or next_pos.y >= (self.config.height - 1)
-        )
-
-        # Switch direction if 5 seconds have elapsed OR ghost hits board boundaries
-        if ghost.dir_change_timer >= 5.0 or is_blocked or ghost.direction == Direction.NONE:
-            ghost.direction = self._get_random_valid_direction(ghost)
-            ghost.dir_change_timer = 0.0
-            next_pos = ghost.position.move_continuous(ghost.direction, dist)
-
-        # Clamp position safely within board boundaries
-        gx = max(0.0, min(float(self.config.width - 1), next_pos.x))
-        gy = max(0.0, min(float(self.config.height - 1), next_pos.y))
-        ghost.position = Vector2D(x=gx, y=gy)
-
-    def _get_random_valid_direction(self, ghost: GhostState) -> Direction:
-        """Pick a new random direction, avoiding immediate 180-degree reversals when possible."""
-        possible_dirs = [Direction.UP, Direction.DOWN, Direction.LEFT, Direction.RIGHT]
-
-        # Prevent 180-degree turnbacks if alternatives exist
-        opposites = {
-            Direction.UP: Direction.DOWN, Direction.DOWN: Direction.UP,
-            Direction.LEFT: Direction.RIGHT, Direction.RIGHT: Direction.LEFT,
-        }
-
-        opposite = opposites.get(ghost.direction)
-        non_reversing = [d for d in possible_dirs if d != opposite]
-
-        return random.choice(non_reversing if non_reversing else possible_dirs)
+            if self.state != GameState.PLAYING:
+                return
 
     def render(self) -> None:
         if self.state == GameState.MENU:
@@ -262,8 +201,7 @@ class GameEngine:
         elif self.state in (GameState.PLAYING, GameState.PAUSED, GameState.CONFIRM_QUIT):
             self.ui.clear()
             self.ui.draw_hud(self.score, self.player.lives, self.time_remaining, self.current_level)
-            self.ui.draw_maze_border()
-            self.ui.draw_board(self.board)
+            self.ui.draw_board(self.board, False)
             self.ui.draw_grid_overlay(alpha=20)
             self.ui.draw_player(self.player)
             self.ui.draw_ghosts(self.ghosts)

@@ -14,9 +14,12 @@
 - [x] Load & render classic Pac-Man / Ghost directional sprites & animations.
 
 ## Phase 3: External Maze Adapter & Dynamic Generation
-- [ ] Integrate A-Maze-ing algorithm interface.
-- [ ] Add classic 1980 arcade maze fallback grid layout (19x22).
-- [ ] Pac-gum & Super Pac-gum tile placement logic.
+- [x] Integrate A-Maze-ing algorithm interface with bitmask wall translation.
+- [x] 1:1 $19 \times 22$ native grid mapping with sub-pixel vector line walls ($1-3\text{ px}$).
+- [x] Option for standard 1980 classic arcade layout fallback alongside dynamic generator.
+- [x] Ghost House, Gate door allocation, and Debug Tile color overlay.
+- [x] Pac-gum & Super Pac-gum bitwise tile placement logic.
+- [x] Grid-snapping entity movement and bitwise wall collision detection (can_move).
 
 ## Phase 4: Classical Pac-Man Ghost AI & Collision Engine
 - [ ] Implement classic targeting vectors (Blinky, Pinky, Inky, Clyde).
@@ -29,5 +32,7 @@
 - [ ] Cheat mode hotkeys (Invincibility, Freeze Ghosts, Speed Boost, Level Skip).
 
 ## Phase 6: Refinement, Packaging & Defense Prep
+- [ ] Unit test suite updates for can_move bitwise collisions & classic map fallback.
 - [ ] Zero traceback audit across malformed inputs.
+- [ ] Documentation update (README.md & architecture overview).
 - [ ] Final compliance check with 42 School subject guidelines.
