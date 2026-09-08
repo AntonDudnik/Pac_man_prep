@@ -1,4 +1,4 @@
-from pacman.entities.base import Vector2D, DOT, SUPER_DOT, NORTH
+from pacman.entities.base import Vector2D, CellType
 from pacman.entities.ghost import Ghost
 from pacman.entities.player import Player
 from pacman.ui import PygameUI
@@ -29,8 +29,8 @@ def test_ui_initialization(ui_instance):
 
 def test_ui_draw_board_fallback(ui_instance):
     board = [
-        [NORTH | DOT, 0],
-        [SUPER_DOT, 0],
+        [CellType.NORTH | CellType.DOT, 0],
+        [CellType.SUPER_DOT, 0],
     ]
     # Verify no exceptions thrown during board rendering pass
     try:

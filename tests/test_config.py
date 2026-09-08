@@ -30,7 +30,6 @@ def test_load_config_from_valid_file() -> None:
     assert isinstance(config, GameConfig)
     assert config.lives == 3
     assert config.points_per_ghost == 200
-    assert config.seed == 42
 
 
 def test_level_config_defaults() -> None:

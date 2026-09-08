@@ -1,18 +1,16 @@
 import os
 import sys
-from typing import List
+from typing import Dict, List, Union
 
 from pacman.spritesheet import AnimationManager, SpriteSheet
-from pacman.entities.player import Player
-from pacman.entities.ghost import Ghost
-
+from pacman.entities import GhostType, CellType, Player, Ghost
 
 os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "1"
 import pygame  # noqa: E402
 
 # Board & UI Constants
 HUD_HEIGHT: int = 40
-WALL_THICKNESS: int = 3
+WALL_THICKNESS: int = 1
 
 # Color Constants (RGB)
 BLACK = (0, 0, 0)
@@ -23,26 +21,12 @@ RED = (255, 0, 0)
 PINK = (252, 181, 255)
 CYAN = (0, 255, 255)
 ORANGE = (253, 161, 37)
-PELLET_COLOR = (255, 184, 151)
-GHOST_HOUSE_COLOR = (60, 60, 180)
-GATE_COLOR = (255, 184, 222)
-
-
-# Define bitmask flags based on standard maze specs
-NORTH: int = 1
-EAST: int = 2
-SOUTH: int = 4
-WEST: int = 8
-DOT: int = 16
-SUPER_DOT: int = 32
-
-BLUE = (33, 33, 255)
-PELLET_COLOR = (255, 183, 174)
 
 # Debug Colors (Semi-transparent / distinct)
 GHOST_HOUSE_COLOR = (70, 0, 120)  # Purple
 GATE_COLOR = (255, 184, 255)       # Pink Gate Line
 OBSTACLE_42_COLOR = (40, 40, 40)   # Dark Gray for solid '42' blocks (value 15)
+PELLET_COLOR = (255, 183, 174)
 
 
 class PygameUI:
@@ -112,11 +96,11 @@ class PygameUI:
                 # --- DEBUG VISUAL OVERLAYS ---
                 if debug:
                     # Highlight Ghost Box interior tiles
-                    if cell & 64:  # GHOST_HOUSE
+                    if cell & CellType.GHOST_HOUSE:  # GHOST_HOUSE
                         pygame.draw.rect(self.screen, GHOST_HOUSE_COLOR, (left, top, cs, cs))
 
                     # Highlight Ghost Gate door tile
-                    if cell & 128:  # GATE
+                    if cell & CellType.GATE:  # GATE
                         pygame.draw.rect(self.screen, GATE_COLOR, (left, top, cs, cs))
 
                     # Highlight solid '42' maze generator obstacles (raw code 15)
@@ -124,7 +108,7 @@ class PygameUI:
                         pygame.draw.rect(self.screen, OBSTACLE_42_COLOR, (left, top, cs, cs))
 
                 # 1. Render Pellets
-                if cell & 16:  # DOT
+                if cell & CellType.DOT:  # DOT
                     if self.animations and hasattr(self.animations.sheet, "wall_sprites"):
                         sprite = self.animations.sheet.wall_sprites.get("dot")
                         if sprite:
@@ -133,7 +117,7 @@ class PygameUI:
                             pygame.draw.circle(self.screen, PELLET_COLOR, (cx, cy), 3)
                     else:
                         pygame.draw.circle(self.screen, PELLET_COLOR, (cx, cy), 3)
-                elif cell & 32:  # SUPER_DOT
+                elif cell & CellType.SUPER_DOT:  # SUPER_DOT
                     if self.animations and hasattr(self.animations.sheet, "wall_sprites"):
                         sprite = self.animations.sheet.wall_sprites.get("super_dot")
                         if sprite:
@@ -144,15 +128,15 @@ class PygameUI:
                         pygame.draw.circle(self.screen, PELLET_COLOR, (cx, cy), 7)
 
                 # 2. Render Wall Lines using top-level constant
-                if cell & 1:  # NORTH
+                if cell & CellType.NORTH:  # NORTH
                     pygame.draw.line(self.screen, BLUE, (left, top), (right, top), WALL_THICKNESS)
-                if cell & 2:  # EAST
+                if cell & CellType.EAST:  # EAST
                     pygame.draw.line(self.screen, BLUE, (right, top),
                                      (right, bottom), WALL_THICKNESS)
-                if cell & 4:  # SOUTH
+                if cell & CellType.SOUTH:  # SOUTH
                     pygame.draw.line(self.screen, BLUE, (left, bottom),
                                      (right, bottom), WALL_THICKNESS)
-                if cell & 8:  # WEST
+                if cell & CellType.WEST:  # WEST
                     pygame.draw.line(self.screen, BLUE, (left, top), (left, bottom), WALL_THICKNESS)
 
     def draw_player(self, player: Player) -> None:
@@ -167,8 +151,10 @@ class PygameUI:
             cy = py + self.cell_size // 2
             pygame.draw.circle(self.screen, YELLOW, (cx, cy), self.cell_size // 2 - 2)
 
-    def draw_ghosts(self, ghosts: List[Ghost]) -> None:
-        for ghost in ghosts:
+    def draw_ghosts(self, ghosts: Union[Dict[GhostType, Ghost], List[Ghost]]) -> None:
+        ghost_list = ghosts.values() if isinstance(ghosts, dict) else ghosts
+
+        for ghost in ghost_list:
             gx = int(ghost.position.x * self.cell_size + WALL_THICKNESS // 2 + 2)
             gy = int(ghost.position.y * self.cell_size + WALL_THICKNESS // 2 + 2) + HUD_HEIGHT
 

@@ -1,9 +1,12 @@
+from pacman.ai.ghost_manager import GhostManager
+from pacman.entities import Direction, GhostMode, GhostType, Vector2D
 from pacman.entities.ghost import Ghost
 from pacman.entities.player import Player
-from pacman.entities.state import GameState, GhostMode
-from pacman.entities.base import Vector2D, Direction
+from pacman.entities.state import GameState
 from pacman.config import GameConfig
 from pacman.adapters.maze import MazeAdapter
+from pacman.entities.base import CellType
+from pacman.ai.ghost_house import GhostHouseManager
 
 import os
 os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "1"
@@ -24,7 +27,7 @@ class GameEngine:
             config.cell_size, config.spritesheet_path)
 
         self.current_level = 1
-        self.score = 0
+        self.score: int = 0
         self.lives = config.lives
         self.time_remaining = float(config.level_max_time)
         self.state = GameState.MENU
@@ -35,23 +38,40 @@ class GameEngine:
         self.cheat_freeze_ghosts = False
         self.cheat_speed_boost: bool = False
 
-        # 2. Initialize Player and Ghosts matching your model fields
-        # self.player = PlayerState()
-        self.player = Player(speed=self.config.player_speed, lives=self.config.lives)
-        self.ghosts = [
-            Ghost(ghost_id=0, home_corner=Vector2D(x=1, y=1), speed=self.config.ghost_speed),
-            Ghost(ghost_id=1, home_corner=Vector2D(x=self.config.width - 2, y=1),
-                  speed=self.config.ghost_speed),
-            Ghost(ghost_id=2, home_corner=Vector2D(
-                x=1, y=self.config.height - 2), speed=self.config.ghost_speed),
-            Ghost(ghost_id=3, home_corner=Vector2D(x=self.config.width - 2,
-                  y=self.config.height - 2), speed=self.config.ghost_speed),
-        ]
+        # Player setup
+        self.player = Player(position=Vector2D(x=9.0, y=15.0), speed=5.0)
 
-        # 3. Position Player on spawn point derived from maze generator
-        if hasattr(self.maze_adapter, "player_spawn"):
-            px, py = self.maze_adapter.player_spawn
-            self.player.position = Vector2D(x=float(px), y=float(py))
+        # Ghosts setup with Arcade home scatter corners and spawn positions
+        self.ghosts: dict[GhostType, Ghost] = {
+            GhostType.BLINKY: Ghost(
+                ghost_id=0,
+                home_corner=Vector2D(x=17.0, y=-2.0),
+                position=Vector2D(x=9.0, y=8.0),  # Just outside Ghost House
+                speed=4.0,
+            ),
+            GhostType.PINKY: Ghost(
+                ghost_id=1,
+                home_corner=Vector2D(x=1.0, y=-2.0),
+                position=Vector2D(x=9.0, y=10.0),  # Inside Ghost House
+                speed=4.0,
+            ),
+            GhostType.INKY: Ghost(
+                ghost_id=2,
+                home_corner=Vector2D(x=18.0, y=21.0),
+                position=Vector2D(x=8.0, y=10.0),  # Inside Ghost House
+                speed=4.0,
+            ),
+            GhostType.CLYDE: Ghost(
+                ghost_id=3,
+                home_corner=Vector2D(x=0.0, y=21.0),
+                position=Vector2D(x=10.0, y=10.0),  # Inside Ghost House
+                speed=4.0,
+            ),
+        }
+
+        # Initialize GhostManager with all 4 ghosts
+        self.ghost_manager = GhostManager(self.ghosts)
+        self.ghost_house_mgr = GhostHouseManager(self.ghosts)
 
     def generate_maze(self) -> MazeAdapter:
         """Instantiate MazeAdapter with current config parameters."""
@@ -176,23 +196,86 @@ class GameEngine:
 
     def update(self, dt: float) -> None:
         self.ui.update_anim_timer(dt)
-
         self.time_remaining -= dt
         if self.time_remaining <= 0:
             self.state = GameState.GAME_OVER
 
+        """Main game state tick called on every frame."""
         if self.state != GameState.PLAYING:
             return
 
-        # 1. Update Player
+        # 1. Advance Player position
         self.player.update(self.board, dt)
 
-        # 2. Update Ghosts
-        for ghost in self.ghosts:
-            ghost.update(self.board, dt, frozen=self.cheat_freeze_ghosts)
+        # 2. Process Tile Consumption (Pac-gum & Super Pac-gum)
+        self._check_tile_consumption()
 
-            if self.state != GameState.PLAYING:
-                return
+        # 3. Advance Ghost Manager
+        self.ghost_house_mgr.update(dt)
+
+        self.ghost_manager.update(
+            board=self.board,
+            dt=dt,
+            pacman_pos=self.player.position,
+            pacman_dir=self.player.direction,
+        )
+        self._check_ghost_collisions()
+
+    def _check_tile_consumption(self) -> None:
+        px, py = self.player.grid_x, self.player.grid_y
+
+        if 0 <= py < len(self.board) and 0 <= px < len(self.board[0]):
+            cell = self.board[py][px]
+
+            if cell & (CellType.SUPER_DOT | CellType.DOT):
+                if cell & CellType.SUPER_DOT:
+                    self.board[py][px] &= ~CellType.SUPER_DOT
+                    self.score += 50
+                    self.ghost_manager.trigger_frightened(duration=7.0)
+                else:
+                    self.board[py][px] &= ~CellType.DOT
+                    self.score += 10
+
+                # Notify house manager of dot eating
+                self.ghost_house_mgr.on_dot_eaten()
+
+    def _check_ghost_collisions(self) -> None:
+        px, py = self.player.grid_x, self.player.grid_y
+
+        for ghost in self.ghosts.values():
+            if ghost.grid_x == px and ghost.grid_y == py:
+                if ghost.mode == GhostMode.FRIGHTENED:
+                    # Award progressive bonus: 200, 400, 800, 1600
+                    points = self.ghost_manager.consume_frightened_ghost(ghost)
+                    self.score += points
+
+                elif ghost.mode in (GhostMode.CHASE, GhostMode.SCATTER):
+                    # Pac-Man dies
+                    self.player.lives -= 1
+                    if self.player.lives <= 0:
+                        self.state = GameState.GAME_OVER
+                    else:
+                        self.reset_positions()
+                    break
+
+    def reset_positions(self) -> None:
+        """Resets entity positions after death or round restart."""
+        self.player.position = Vector2D(x=9.0, y=15.0)
+        self.player.direction = Direction.NONE
+        self.player.next_direction = Direction.NONE
+
+        spawn_positions = {
+            GhostType.BLINKY: Vector2D(x=9.0, y=8.0),
+            GhostType.PINKY: Vector2D(x=9.0, y=10.0),
+            GhostType.INKY: Vector2D(x=8.0, y=10.0),
+            GhostType.CLYDE: Vector2D(x=10.0, y=10.0),
+        }
+
+        for ghost_type, ghost in self.ghosts.items():
+            ghost.position = spawn_positions[ghost_type]
+            ghost.direction = Direction.NONE
+            ghost.next_direction = Direction.NONE
+            ghost.mode = GhostMode.CHASE
 
     def render(self) -> None:
         if self.state == GameState.MENU:
@@ -201,8 +284,8 @@ class GameEngine:
         elif self.state in (GameState.PLAYING, GameState.PAUSED, GameState.CONFIRM_QUIT):
             self.ui.clear()
             self.ui.draw_hud(self.score, self.player.lives, self.time_remaining, self.current_level)
-            self.ui.draw_board(self.board, False)
-            self.ui.draw_grid_overlay(alpha=20)
+            self.ui.draw_board(self.board, True)
+            self.ui.draw_grid_overlay(alpha=0)
             self.ui.draw_player(self.player)
             self.ui.draw_ghosts(self.ghosts)
 

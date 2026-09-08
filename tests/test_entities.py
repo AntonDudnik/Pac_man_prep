@@ -3,13 +3,12 @@ from pacman.entities.base import (
     Direction,
     Vector2D,
     can_move,
-    NORTH,
-    WEST,
-    GATE,
+    CellType
 )
 from pacman.entities.player import Player
 from pacman.entities.ghost import Ghost
-from pacman.entities.state import GhostMode
+from pacman.entities.state import GhostMode, GhostType
+from pacman.ai.ghost_manager import GhostManager
 
 
 @pytest.fixture
@@ -30,8 +29,8 @@ def walled_board() -> list[list[int]]:
     Cell (1,0) contains a GATE (128).
     """
     return [
-        [0, GATE, 0],
-        [0, NORTH | WEST, 0],
+        [0, CellType.GATE, 0],
+        [0, CellType.NORTH | CellType.WEST, 0],
         [0, 0, 0],
     ]
 
@@ -123,26 +122,47 @@ def test_ghost_initialization():
     assert ghost.home_corner == home
 
 
-def test_ghost_frightened_timer_expiry(empty_3x3_board):
+def test_ghost_frightened_timer_expiry(empty_3x3_board) -> None:
     ghost = Ghost(ghost_id=1, home_corner=Vector2D(x=0.0, y=0.0))
     ghost.mode = GhostMode.FRIGHTENED
     ghost.frightened_timer = 2.0
 
+    manager = GhostManager({GhostType.PINKY: ghost})
+
     # Pass 1 second
-    ghost.update(empty_3x3_board, dt=1.0)
+    manager.update(
+        board=empty_3x3_board,
+        dt=1.0,
+        pacman_pos=Vector2D(x=0.0, y=0.0),
+        pacman_dir=Direction.NONE,
+    )
     assert ghost.mode == GhostMode.FRIGHTENED
     assert pytest.approx(ghost.frightened_timer) == 1.0
 
-    # Pass another 1.5 seconds -> Expiry
-    ghost.update(empty_3x3_board, dt=1.5)
-    assert ghost.mode == GhostMode.CHASE
+    # Pass another 1.5 seconds -> Expiry back to active wave mode (CHASE/SCATTER)
+    manager.update(
+        board=empty_3x3_board,
+        dt=1.5,
+        pacman_pos=Vector2D(x=0.0, y=0.0),
+        pacman_dir=Direction.NONE,
+    )
+    assert ghost.mode != GhostMode.FRIGHTENED
     assert ghost.frightened_timer == 0.0
 
 
-def test_ghost_frozen_state(empty_3x3_board):
+def test_ghost_frozen_state(empty_3x3_board) -> None:
     ghost = Ghost(ghost_id=0, home_corner=Vector2D(x=0.0, y=0.0), position=Vector2D(x=1.0, y=1.0))
     ghost.direction = Direction.RIGHT
 
-    # Frozen state should block movement update
-    ghost.update(empty_3x3_board, dt=0.1, frozen=True)
+    manager = GhostManager({GhostType.BLINKY: ghost})
+
+    # Frozen state passed to manager should block position/movement updates
+    manager.update(
+        board=empty_3x3_board,
+        dt=0.1,
+        pacman_pos=Vector2D(x=0.0, y=0.0),
+        pacman_dir=Direction.NONE,
+        frozen=True,
+    )
     assert ghost.position.x == 1.0
+    assert ghost.position.y == 1.0

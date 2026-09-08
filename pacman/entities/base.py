@@ -1,17 +1,7 @@
 from enum import Enum
 from typing import Tuple
 from pydantic import BaseModel, ConfigDict, Field
-
-
-# Wall Bitwise Flags
-NORTH: int = 1
-EAST: int = 2
-SOUTH: int = 4
-WEST: int = 8
-DOT = 16
-SUPER_DOT = 32
-GHOST_HOUSE: int = 64
-GATE: int = 128
+from pacman.entities.state import CellType
 
 
 class Direction(Enum):
@@ -35,6 +25,14 @@ class Vector2D(BaseModel):
 
     x: float = Field(default=0.0)
     y: float = Field(default=0.0)
+
+    @property
+    def grid_x(self) -> int:
+        return int(round(self.x))
+
+    @property
+    def grid_y(self) -> int:
+        return int(round(self.y))
 
     def to_grid(self) -> Tuple[int, int]:
         """Return integer grid cell indices."""
@@ -110,7 +108,7 @@ def can_move(
     cell = board[grid_y][grid_x]
 
     # Gate handling: Only ghosts can pass through the Gate door
-    if cell & GATE:
+    if (cell & CellType.GATE):
         if is_ghost:
             return True
         # Player sees GATE as solid wall
@@ -119,12 +117,12 @@ def can_move(
 
     # Standard directional wall bit evaluation
     if direction == Direction.UP:
-        return not bool(cell & NORTH)
+        return not bool(cell & CellType.NORTH)
     elif direction == Direction.RIGHT:
-        return not bool(cell & EAST)
+        return not bool(cell & CellType.EAST)
     elif direction == Direction.DOWN:
-        return not bool(cell & SOUTH)
+        return not bool(cell & CellType.SOUTH)
     elif direction == Direction.LEFT:
-        return not bool(cell & WEST)
+        return not bool(cell & CellType.WEST)
 
     return True

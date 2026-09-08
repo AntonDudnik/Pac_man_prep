@@ -157,7 +157,7 @@ class AnimationManager:
             self.sheet.get_entity_tile(col=1, row=5),
         ]
 
-        # 4. Eaten Eyes Only (Palette 0, Row 5, Cols 2..5)
+        # 4. Eaten Eyes Only (Palette (1, 1), Row 0, Cols 0..6)
         self.sheet.set_palette((1, 1))
         self.eaten_frames: Dict[Direction, pygame.Surface] = {
             Direction.RIGHT: self.sheet.get_entity_tile(col=0, row=0),
