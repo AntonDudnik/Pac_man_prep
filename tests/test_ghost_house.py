@@ -8,9 +8,9 @@ from pacman.entities.ghost import Ghost
 def _build_test_ghosts() -> dict[GhostType, Ghost]:
     return {
         GhostType.BLINKY: Ghost(ghost_id=0, home_corner=Vector2D()),
-        GhostType.PINKY: Ghost(ghost_id=1, home_corner=Vector2D()),
-        GhostType.INKY: Ghost(ghost_id=2, home_corner=Vector2D()),
-        GhostType.CLYDE: Ghost(ghost_id=3, home_corner=Vector2D()),
+        GhostType.PINKY: Ghost(ghost_id=1, home_corner=Vector2D(), is_in_house=True),
+        GhostType.INKY: Ghost(ghost_id=2, home_corner=Vector2D(), is_in_house=True),
+        GhostType.CLYDE: Ghost(ghost_id=3, home_corner=Vector2D(), is_in_house=True),
     }
 
 

@@ -6,14 +6,14 @@
   "points_per_pacgum": 10,
   "points_per_super_pacgum": 50,
   "points_per_ghost": 200,
-  "seed": 125,
+  "seed": 42,
 
   /* Maze and Level Configuration */
-  "width": 30,
-  "height": 20,
+  "width": 22,
+  "height": 19,
   "cell_size": 42,
-  "player_speed": 7.0,
-  "ghost_speed": 6.0,
+  "player_speed": 5.0,
+  "ghost_speed": 4.5,
   "pacgum": 42,
   "level_max_time": 9999.0,
 

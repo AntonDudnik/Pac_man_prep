@@ -1,6 +1,6 @@
 from pacman.ai.ghost_manager import GhostManager
 from pacman.entities import Direction, GhostMode, GhostType, Vector2D
-from pacman.entities.ghost import Ghost
+from pacman.entities.ghost import Ghost, init_ghosts
 from pacman.entities.player import Player
 from pacman.entities.state import GameState
 from pacman.config import GameConfig
@@ -39,35 +39,13 @@ class GameEngine:
         self.cheat_speed_boost: bool = False
 
         # Player setup
-        self.player = Player(position=Vector2D(x=9.0, y=15.0), speed=5.0)
+        self.player = Player(
+            position=config.player_init_position,
+            speed=config.player_speed)
 
         # Ghosts setup with Arcade home scatter corners and spawn positions
-        self.ghosts: dict[GhostType, Ghost] = {
-            GhostType.BLINKY: Ghost(
-                ghost_id=0,
-                home_corner=Vector2D(x=17.0, y=-2.0),
-                position=Vector2D(x=9.0, y=8.0),  # Just outside Ghost House
-                speed=4.0,
-            ),
-            GhostType.PINKY: Ghost(
-                ghost_id=1,
-                home_corner=Vector2D(x=1.0, y=-2.0),
-                position=Vector2D(x=9.0, y=10.0),  # Inside Ghost House
-                speed=4.0,
-            ),
-            GhostType.INKY: Ghost(
-                ghost_id=2,
-                home_corner=Vector2D(x=18.0, y=21.0),
-                position=Vector2D(x=8.0, y=10.0),  # Inside Ghost House
-                speed=4.0,
-            ),
-            GhostType.CLYDE: Ghost(
-                ghost_id=3,
-                home_corner=Vector2D(x=0.0, y=21.0),
-                position=Vector2D(x=10.0, y=10.0),  # Inside Ghost House
-                speed=4.0,
-            ),
-        }
+        self.ghosts: dict[GhostType, Ghost] = init_ghosts(
+            config.width, config.height, config.ghost_speed)
 
         # Initialize GhostManager with all 4 ghosts
         self.ghost_manager = GhostManager(self.ghosts)
@@ -196,7 +174,8 @@ class GameEngine:
 
     def update(self, dt: float) -> None:
         self.ui.update_anim_timer(dt)
-        self.time_remaining -= dt
+        if self.state == GameState.PLAYING:
+            self.time_remaining -= dt
         if self.time_remaining <= 0:
             self.state = GameState.GAME_OVER
 

@@ -9,8 +9,8 @@ from pacman.entities.ghost import Ghost
 # Individual dot thresholds for Level 1
 DEFAULT_DOT_LIMITS: Dict[GhostType, int] = {
     GhostType.PINKY: 0,
-    GhostType.INKY: 30,
-    GhostType.CLYDE: 60,
+    GhostType.INKY: 5,
+    GhostType.CLYDE: 10,
 }
 
 RELEASE_ORDER = [GhostType.PINKY, GhostType.INKY, GhostType.CLYDE]
@@ -23,27 +23,6 @@ class GhostHouseManager:
         self.dots_eaten: int = 0
         self.inactivity_timer: float = 0.0
         self.inactivity_limit: float = 4.0  # Force release if no dots eaten for 4s
-
-        # Initial positions inside house
-        self._setup_initial_positions()
-
-    def _setup_initial_positions(self) -> None:
-        """Positions ghosts in home slots."""
-        if GhostType.BLINKY in self.ghosts:
-            self.ghosts[GhostType.BLINKY].position = Vector2D(x=9.0, y=8.0)
-            self.ghosts[GhostType.BLINKY].is_in_house = False
-
-        if GhostType.PINKY in self.ghosts:
-            self.ghosts[GhostType.PINKY].position = Vector2D(x=9.0, y=10.0)
-            self.ghosts[GhostType.PINKY].is_in_house = True
-
-        if GhostType.INKY in self.ghosts:
-            self.ghosts[GhostType.INKY].position = Vector2D(x=8.0, y=10.0)
-            self.ghosts[GhostType.INKY].is_in_house = True
-
-        if GhostType.CLYDE in self.ghosts:
-            self.ghosts[GhostType.CLYDE].position = Vector2D(x=10.0, y=10.0)
-            self.ghosts[GhostType.CLYDE].is_in_house = True
 
     def on_dot_eaten(self) -> None:
         """Call whenever Pac-Man eats a dot/super-dot."""

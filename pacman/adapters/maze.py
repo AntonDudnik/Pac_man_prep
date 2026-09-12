@@ -1,12 +1,25 @@
 from typing import List, Tuple
 from mazegenerator import MazeGenerator
 from pacman.entities.state import CellType
+from dataclasses import dataclass
+from pacman.entities import GhostType, Vector2D
+
+
+@dataclass(frozen=True)
+class MazeLayout:
+    grid: list[list[int]]
+    width: int
+    height: int
+    player_spawn: Vector2D
+    ghost_house_door: Vector2D                      # exit cell from Ghost house
+    ghost_house_slots: dict[GhostType, Vector2D]
+    scatter_corners: dict[GhostType, Vector2D]      # calculates from Weight-Height
 
 
 class MazeAdapter:
     """Adapts raw MazeGenerator bitmasks into a 1:1 Pac-Man board representation."""
 
-    def __init__(self, size: Tuple[int, int] = (19, 22), seed: int = 0) -> None:
+    def __init__(self, size: Tuple[int, int], seed: int) -> None:
         self.width, self.height = size
         self.generator = MazeGenerator(size=size, perfect=False, seed=seed)
 

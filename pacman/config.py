@@ -3,6 +3,7 @@ import re
 import sys
 from typing import List, Tuple
 from pydantic import BaseModel, Field, ValidationError
+from pacman.entities.base import Vector2D
 
 
 class LevelConfig(BaseModel):
@@ -38,6 +39,10 @@ class GameConfig(BaseModel):
     def maze_size(self) -> Tuple[int, int]:
         """Convert game width/height into raw tuple dimensions for MazeGenerator."""
         return (self.width, self.height)
+
+    @property
+    def player_init_position(self) -> Vector2D:
+        return Vector2D(x=self.width // 2, y=self.height // 4 * 3)
 
 
 def strip_json_comments(content: str) -> str:

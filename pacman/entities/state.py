@@ -29,7 +29,7 @@ class CellType(IntEnum):
     EAST: int = 2
     SOUTH: int = 4
     WEST: int = 8
-    DOT = 16
-    SUPER_DOT = 32
+    DOT: int = 16
+    SUPER_DOT: int = 32
     GHOST_HOUSE: int = 64
     GATE: int = 128

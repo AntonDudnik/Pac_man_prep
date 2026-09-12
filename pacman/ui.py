@@ -10,7 +10,7 @@ import pygame  # noqa: E402
 
 # Board & UI Constants
 HUD_HEIGHT: int = 40
-WALL_THICKNESS: int = 1
+WALL_THICKNESS: int = 2
 
 # Color Constants (RGB)
 BLACK = (0, 0, 0)
@@ -103,9 +103,9 @@ class PygameUI:
                     if cell & CellType.GATE:  # GATE
                         pygame.draw.rect(self.screen, GATE_COLOR, (left, top, cs, cs))
 
-                    # Highlight solid '42' maze generator obstacles (raw code 15)
+                    '''# Highlight solid '42' maze generator obstacles (raw code 15)
                     if (cell & 15) == 15:
-                        pygame.draw.rect(self.screen, OBSTACLE_42_COLOR, (left, top, cs, cs))
+                        pygame.draw.rect(self.screen, OBSTACLE_42_COLOR, (left, top, cs, cs))'''
 
                 # 1. Render Pellets
                 if cell & CellType.DOT:  # DOT
