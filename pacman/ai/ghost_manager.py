@@ -1,12 +1,13 @@
 """Ghost Manager orchestrating state transitions, targeting, and intersections."""
 
 import random
+from typing import cast
 from pacman.ai.targeting import (
-    DEFAULT_SCATTER_CORNERS,
+    GHOST_HOUSE_SPAWN,
+    get_eaten_target_tile,
     get_next_intersection_direction,
     get_target_tile,
 )
-from pacman.ai.targeting import GHOST_HOUSE_SPAWN, get_eaten_target_tile
 from pacman.ai.wave_timer import GlobalWaveMode, WaveTimer
 from pacman.entities import Direction, GhostMode, GhostType, Vector2D
 from pacman.entities.base import can_move
@@ -39,7 +40,7 @@ class GhostManager:
         blinky_pos = blinky.position if blinky else Vector2D()
 
         # 2. Update each ghost entity
-        for ghost_type, ghost in self.ghosts.items():
+        for ghost in self.ghosts.values():
             if ghost.mode == GhostMode.FRIGHTENED:
                 ghost.frightened_timer -= dt
                 if ghost.frightened_timer <= 0.0:
@@ -49,7 +50,6 @@ class GhostManager:
             # Update direction logic at intersection alignment point
             self._update_ghost_direction(
                 ghost=ghost,
-                ghost_type=ghost_type,
                 board=board,
                 pacman_pos=pacman_pos,
                 pacman_dir=pacman_dir,
@@ -90,12 +90,11 @@ class GhostManager:
         # Progression: 200 -> 400 -> 800 -> 1600
         score_value = 200 * (2 ** self.ghost_eat_streak)
         self.ghost_eat_streak = min(self.ghost_eat_streak + 1, 3)
-        return score_value
+        return cast(int, score_value)
 
     def _update_ghost_direction(
         self,
         ghost: Ghost,
-        ghost_type: GhostType,
         board: list[list[int]],
         pacman_pos: Vector2D,
         pacman_dir: Direction,
@@ -115,7 +114,7 @@ class GhostManager:
             # Check if eyes have arrived inside the Ghost House
             if gx == GHOST_HOUSE_SPAWN.grid_x and gy == GHOST_HOUSE_SPAWN.grid_y:
                 ghost.mode = GhostMode.CHASE
-                ghost.speed = 4.0
+                ghost.speed = ghost.config.ghost_speed
                 return
 
             target_tile = get_eaten_target_tile(ghost.position)
@@ -140,13 +139,12 @@ class GhostManager:
                 ghost.next_direction = random.choice(valid_dirs)
             return
 
-        # Determine target tile depending on current global wave mode
+        # 2. Determine target tile depending on current global wave mode
         if self.wave_timer.current_mode == GlobalWaveMode.SCATTER:
-            target_tile = DEFAULT_SCATTER_CORNERS.get(ghost_type, Vector2D())
+            target_tile = ghost.home_corner if ghost.home_corner is not None else Vector2D()
         else:
             target_tile = get_target_tile(
-                ghost_type=ghost_type,
-                ghost_pos=ghost.position,
+                ghost=ghost,
                 pacman_pos=pacman_pos,
                 pacman_dir=pacman_dir,
                 blinky_pos=blinky_pos,

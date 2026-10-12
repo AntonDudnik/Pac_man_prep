@@ -1,4 +1,4 @@
-from typing import List, Tuple
+from typing import List, Tuple, cast
 from mazegenerator import MazeGenerator
 from pacman.entities.state import CellType
 from dataclasses import dataclass
@@ -34,7 +34,7 @@ class MazeAdapter:
 
     def get_shortest_path(self) -> str | bool:
         """Expose calculated BFS navigation string."""
-        return self.generator.shortest_path
+        return cast(str | bool, self.generator.shortest_path)
 
     def _load_bitmask(self) -> None:
         """Copy native 4-bit wall codes directly without spatial expansion."""

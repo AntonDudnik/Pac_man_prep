@@ -9,6 +9,7 @@ from pacman.entities.player import Player
 from pacman.entities.ghost import Ghost
 from pacman.entities.state import GhostMode, GhostType
 from pacman.ai.ghost_manager import GhostManager
+from pacman.config import GameConfig
 
 
 @pytest.fixture
@@ -19,6 +20,16 @@ def empty_3x3_board() -> list[list[int]]:
         [0, 0, 0],
         [0, 0, 0],
     ]
+
+
+@pytest.fixture
+def game_config() -> GameConfig:
+    config = GameConfig()
+    config.width = 3
+    config.height = 3
+    config.player_speed = 5
+    config.live = 3
+    return config
 
 
 @pytest.fixture
@@ -81,14 +92,26 @@ def test_can_move_out_of_bounds(empty_3x3_board):
 # --- BaseEntity & Player Tests ---
 
 def test_player_initialization():
-    player = Player(position=Vector2D(x=1.0, y=1.0), speed=5.0, lives=3)
-    assert player.grid_x == 1
-    assert player.grid_y == 1
+    config = GameConfig()
+    config.width = 4
+    config.height = 4
+    config.player_speed = 5
+    config.lives = 3
+
+    player = Player(config)
+    assert player.grid_x == 2
+    assert player.grid_y == 2
+    assert player.speed == 5
     assert player.lives == 3
 
 
 def test_player_movement_and_turn(empty_3x3_board):
-    player = Player(position=Vector2D(x=1.0, y=1.0), speed=1.0)
+    config = GameConfig()
+    config.width = 3
+    config.height = 3
+    config.player_speed = 5
+    config.lives = 3
+    player = Player(config)
     player.next_direction = Direction.RIGHT
 
     # Process frame step

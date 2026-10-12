@@ -1,5 +1,5 @@
 from pacman.ai.ghost_manager import GhostManager
-from pacman.entities import Direction, GhostMode, GhostType, Vector2D
+from pacman.entities import Direction, GhostMode, GhostType
 from pacman.entities.ghost import Ghost, init_ghosts
 from pacman.entities.player import Player
 from pacman.entities.state import GameState
@@ -39,13 +39,10 @@ class GameEngine:
         self.cheat_speed_boost: bool = False
 
         # Player setup
-        self.player = Player(
-            position=config.player_init_position,
-            speed=config.player_speed)
+        self.player = Player(config)
 
         # Ghosts setup with Arcade home scatter corners and spawn positions
-        self.ghosts: dict[GhostType, Ghost] = init_ghosts(
-            config.width, config.height, config.ghost_speed)
+        self.ghosts: dict[GhostType, Ghost] = init_ghosts(config)
 
         # Initialize GhostManager with all 4 ghosts
         self.ghost_manager = GhostManager(self.ghosts)
@@ -148,14 +145,14 @@ class GameEngine:
 
                     # Visual Debugging Hotkeys
                     elif event.key == pygame.K_f:
-                        for ghost in self.ghosts:
+                        for ghost in self.ghosts.values():
                             ghost.mode = GhostMode.FRIGHTENED
                             ghost.frightened_timer = 7.0
                     elif event.key == pygame.K_e:
-                        for ghost in self.ghosts:
+                        for ghost in self.ghosts.values():
                             ghost.mode = GhostMode.EATEN
                     elif event.key == pygame.K_c:
-                        for ghost in self.ghosts:
+                        for ghost in self.ghosts.values():
                             ghost.mode = GhostMode.CHASE
                             ghost.frightened_timer = 0.0
 
@@ -239,19 +236,12 @@ class GameEngine:
 
     def reset_positions(self) -> None:
         """Resets entity positions after death or round restart."""
-        self.player.position = Vector2D(x=9.0, y=15.0)
+        self.player.position = self.config.player_init_position
         self.player.direction = Direction.NONE
         self.player.next_direction = Direction.NONE
 
-        spawn_positions = {
-            GhostType.BLINKY: Vector2D(x=9.0, y=8.0),
-            GhostType.PINKY: Vector2D(x=9.0, y=10.0),
-            GhostType.INKY: Vector2D(x=8.0, y=10.0),
-            GhostType.CLYDE: Vector2D(x=10.0, y=10.0),
-        }
-
         for ghost_type, ghost in self.ghosts.items():
-            ghost.position = spawn_positions[ghost_type]
+            ghost.position = ghost.get_spawn_position()
             ghost.direction = Direction.NONE
             ghost.next_direction = Direction.NONE
             ghost.mode = GhostMode.CHASE

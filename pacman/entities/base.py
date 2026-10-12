@@ -1,61 +1,15 @@
-from enum import Enum
-from typing import Tuple
-from pydantic import BaseModel, ConfigDict, Field
+from pacman.data_structure import Direction, Vector2D
 from pacman.entities.state import CellType
+from pacman.config import GameConfig
 
 
-class Direction(Enum):
-    UP = (0, -1)
-    DOWN = (0, 1)
-    LEFT = (-1, 0)
-    RIGHT = (1, 0)
-    NONE = (0, 0)
-
-    @property
-    def dx(self) -> int:
-        return self.value[0]
-
-    @property
-    def dy(self) -> int:
-        return self.value[1]
-
-
-class Vector2D(BaseModel):
-    model_config = ConfigDict(frozen=False)
-
-    x: float = Field(default=0.0)
-    y: float = Field(default=0.0)
-
-    @property
-    def grid_x(self) -> int:
-        return int(round(self.x))
-
-    @property
-    def grid_y(self) -> int:
-        return int(round(self.y))
-
-    def to_grid(self) -> Tuple[int, int]:
-        """Return integer grid cell indices."""
-        return (int(self.x), int(self.y))
-
-    def move_continuous(self, direction: Direction, distance: float) -> "Vector2D":
-        """Move position smoothly by distance in direction."""
-        return Vector2D(
-            x=self.x + direction.dx * distance,
-            y=self.y + direction.dy * distance,
-        )
-
-    def move(self, direction: Direction) -> "Vector2D":
-        """Discrete grid step move for backward compatibility with unit tests."""
-        return self.move_continuous(direction, 1.0)
-
-
-class BaseEntity:
+class BaseEntity():
     """Base class for dynamic runtime game objects."""
 
-    def __init__(self, position: Vector2D | None = None, speed: float = 5.0) -> None:
-        self.position = position if position is not None else Vector2D(x=0.0, y=0.0)
-        self.speed = speed
+    def __init__(self, config: GameConfig) -> None:
+        self.config = config
+        self.position = Vector2D(x=0.0, y=0.0)
+        self.speed = 0.0
         self.direction = Direction.NONE
         self.next_direction = Direction.NONE
 

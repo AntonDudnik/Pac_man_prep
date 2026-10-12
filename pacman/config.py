@@ -3,7 +3,7 @@ import re
 import sys
 from typing import List, Tuple
 from pydantic import BaseModel, Field, ValidationError
-from pacman.entities.base import Vector2D
+from pacman.data_structure import Vector2D
 
 
 class LevelConfig(BaseModel):

@@ -10,7 +10,7 @@ import pygame  # noqa: E402
 
 # Board & UI Constants
 HUD_HEIGHT: int = 40
-WALL_THICKNESS: int = 2
+WALL_THICKNESS: int = 4
 
 # Color Constants (RGB)
 BLACK = (0, 0, 0)

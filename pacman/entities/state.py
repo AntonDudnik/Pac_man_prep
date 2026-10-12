@@ -25,11 +25,11 @@ class GhostType(str, Enum):
 
 class CellType(IntEnum):
     # Wall Bitwise Flags
-    NORTH: int = 1
-    EAST: int = 2
-    SOUTH: int = 4
-    WEST: int = 8
-    DOT: int = 16
-    SUPER_DOT: int = 32
-    GHOST_HOUSE: int = 64
-    GATE: int = 128
+    NORTH = 1
+    EAST = 2
+    SOUTH = 4
+    WEST = 8
+    DOT = 16
+    SUPER_DOT = 32
+    GHOST_HOUSE = 64
+    GATE = 128
